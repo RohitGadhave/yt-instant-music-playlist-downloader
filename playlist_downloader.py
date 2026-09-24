@@ -23,19 +23,24 @@ def download_playlist_as_mp3(playlist_url):
     entries = list(info['entries'])
     total_items = len(entries)
     
-    # Create a safe folder name from the playlist title
-    safe_folder_name = re.sub(r'[\\/*?:"<>|]', "", playlist_title).strip()
+    # This creates the playlist folder name from the playlist title
+    # 1. Clean ONLY the playlist title
+    safe_title = re.sub(r'[\\/*?:"<>|]', "", playlist_title).strip()
+
+    # 2. Join it with the master "playlists" folder safely
+    safe_folder_name = os.path.join("playlists", safe_title)
+    # 3. Create the directories (this will create both 'playlists' and the subfolder)
     os.makedirs(safe_folder_name, exist_ok=True)
     
     log_filename = os.path.join(safe_folder_name, "download_summary.log")
     
-    print(f"\n📂 Playlist: {playlist_title}")
+    print(f"\n📂 Playlist Folder Created: {safe_folder_name}/")
     print(f"📊 Total videos found: {total_items}\n")
     
     success_count = 0
     failed_items = []
     
-    # 2. Iterate and download each item individually to catch specific errors
+    # 2. Iterate and download each item into the playlist folder
     for index, entry in enumerate(entries, 1):
         if entry is None:
             failed_items.append({
@@ -69,7 +74,7 @@ def download_playlist_as_mp3(playlist_url):
                 'preferredcodec': 'mp3',
                 'preferredquality': '192',
             }],
-            # Manually inject the index for correct track ordering
+            # This ensures the MP3 goes INSIDE the playlist folder
             'outtmpl': f"{safe_folder_name}/{index:02d} - %(title)s.%(ext)s",
             'ignoreerrors': False, # Force exceptions so we can catch and log them
             'quiet': True,         # Suppress yt-dlp console spam to keep our UI clean
@@ -112,6 +117,7 @@ def download_playlist_as_mp3(playlist_url):
     # 4. Final Console Output Summary
     print("===========================================")
     print("🎉 DOWNLOAD PROCESS COMPLETE!")
+    print(f"📂 All files saved inside: {safe_folder_name}/")
     print(f"✅ Succeeded: {success_count} / {total_items}")
     print(f"❌ Failed: {len(failed_items)}")
     print(f"📄 Detailed log saved at: {log_filename}")
